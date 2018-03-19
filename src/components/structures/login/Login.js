@@ -28,6 +28,41 @@ import PlatformPeg from '../../../PlatformPeg';
 // For validating phone numbers without country codes
 const PHONE_NUMBER_REGEX = /^[0-9\(\)\-\s]*$/;
 
+let LiquidLogin = React.createClass({
+    displayName: 'LiquidLogin',
+    getInitialState: function() {
+        return {
+            errorText: null
+        };
+    },
+    componentWillMount: function() {
+        console.log("LiquidLogin: fetching token ...");
+        fetch('/__auth/token', {
+            credentials: "same-origin"
+        }).then((resp) => {
+            return resp.json();
+        }).then((data) => {
+            let {username, access_token} = data;
+            console.log("LiquidLogin: got token, username:", username,
+                "access_token:", access_token, "loggin in with synapse ...");
+            this.props.onSubmit(username, null, null, access_token);
+        }).catch((e) => {
+            this.setState({errorText: "Failed to fetch oauth2 token"});
+        });
+    },
+    render: function() {
+        return (
+            <div>
+                <h2>Liquid login</h2>
+                <p>authenticating ...</p>
+                <div className="mx_Login_error">
+                    { this.state.errorText }
+                </div>
+            </div>
+        )
+    }
+});
+
 /**
  * A wire component which glues together login UI components and Login logic
  */
@@ -393,27 +428,12 @@ module.exports = React.createClass({
                 <div className="mx_Login_box">
                     <LoginHeader />
                     <div>
-                        <h2>{ _t('Sign in') }
-                            { loader }
-                        </h2>
-                        { this.componentForStep(this.state.currentFlow) }
-                        <ServerConfig ref="serverConfig"
-                            withToggleButton={true}
-                            customHsUrl={this.props.customHsUrl}
-                            customIsUrl={this.props.customIsUrl}
-                            defaultHsUrl={this.props.defaultHsUrl}
-                            defaultIsUrl={this.props.defaultIsUrl}
-                            onServerConfigChange={this.onServerConfigChange}
-                            delayTimeMs={1000} />
+                        <LiquidLogin
+                           onSubmit={this.onPasswordLogin}
+                           />
                         <div className="mx_Login_error">
                                 { this.state.errorText }
                         </div>
-                        <a className="mx_Login_create" onClick={this.props.onRegisterClick} href="#">
-                            { _t('Create an account') }
-                        </a>
-                        { loginAsGuestJsx }
-                        { returnToAppJsx }
-                        { this._renderLanguageSetting() }
                         <LoginFooter />
                     </div>
                 </div>
